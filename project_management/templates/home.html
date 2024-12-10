@@ -1,0 +1,128 @@
+{% extends 'layout.html' %}
+
+{% block title %}Главная страница{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="text-center">Добро пожаловать, {{ username }}!</h1>
+
+    <!-- Секция задач -->
+    <div class="row mt-5">
+        <div class="col-md-12">
+            <h3 class="text-center">Ваши задачи</h3>
+            <div class="row">
+                {% for task in tasks %}
+                <div class="col-md-4 mb-3">
+                    <div class="card text-center shadow">
+                        <div class="card-body">
+                            <h5 class="card-title text-truncate">{{ task.name }}</h5>
+                            <p class="card-text text-muted">{{ task.description|truncatechars:100 }}</p>
+                            <div class="d-flex justify-content-center my-2">
+                                <span class="badge rounded-circle mx-1" 
+                                      style="width: 20px; height: 20px; background-color: {{ task.status_color }};" 
+                                      title="Статус: {{ task.status }}"></span>
+                                <span class="badge rounded-circle mx-1" 
+                                      style="width: 20px; height: 20px; background-color: {{ task.priority_color }};" 
+                                      title="Приоритет: {{ task.priority }}"></span>
+                            </div>
+                            <button class="btn btn-primary btn-sm task-details-link" data-task-id="{{ task.id }}">
+                                Просмотреть задачу
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-md-12">
+                    <div class="alert alert-info" role="alert">
+                        У вас пока нет задач.
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно -->
+    <div class="modal fade" id="taskDetailModal" tabindex="-1" aria-labelledby="taskDetailModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="taskDetailModalLabel">Детали задачи</h5>
+                </div>
+                <div class="modal-body">
+                    <h5 id="modalTaskName"></h5>
+                    <p><strong>Описание:</strong> <span id="modalTaskDescription"></span></p>
+                    <p><strong>Статус:</strong> <span id="modalTaskStatus"></span></p>
+                    <p><strong>Приоритет:</strong> <span id="modalTaskPriority"></span></p>
+                    <p><strong>Срок:</strong> <span id="modalTaskDueDate"></span></p>
+                    <div>
+                        <strong>Назначенные пользователи:</strong>
+                        <ul id="taskAssignedUsersList" class="list-group"></ul>
+                    </div>
+                    <div>
+                        <strong>Файлы:</strong>
+                        <ul id="taskFilesList" class="list-group"></ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const taskDetailsLinks = document.querySelectorAll('.task-details-link');
+        taskDetailsLinks.forEach(link => {
+            link.addEventListener('click', function () {
+                const taskId = this.getAttribute('data-task-id');
+                fetch(`/tasks/${taskId}/details/`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Failed to fetch task details.');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        document.getElementById('modalTaskName').innerText = data.name;
+                        document.getElementById('modalTaskDescription').innerText = data.description;
+                        document.getElementById('modalTaskStatus').innerText = data.status;
+                        document.getElementById('modalTaskPriority').innerText = data.priority;
+                        document.getElementById('modalTaskDueDate').innerText = data.due_date;
+
+                        const assignedUsersList = document.getElementById('taskAssignedUsersList');
+                        assignedUsersList.innerHTML = '';
+                        if (data.assigned_to.length > 0) {
+                            data.assigned_to.forEach(user => {
+                                const listItem = document.createElement('li');
+                                listItem.className = 'list-group-item';
+                                listItem.textContent = user;
+                                assignedUsersList.appendChild(listItem);
+                            });
+                        } else {
+                            assignedUsersList.innerHTML = '<li class="list-group-item text-muted">No users assigned</li>';
+                        }
+
+                        const filesList = document.getElementById('taskFilesList');
+                        filesList.innerHTML = '';
+                        if (data.files.length > 0) {
+                            data.files.forEach(file => {
+                                const listItem = document.createElement('li');
+                                listItem.className = 'list-group-item';
+                                listItem.innerHTML = `<a href="${file.url}" download>${file.name}</a>`;
+                                filesList.appendChild(listItem);
+                            });
+                        } else {
+                            filesList.innerHTML = '<li class="list-group-item text-muted">No files attached</li>';
+                        }
+
+                        const taskDetailModal = new bootstrap.Modal(document.getElementById('taskDetailModal'));
+                        taskDetailModal.show();
+                    })
+                    .catch(error => {
+                        console.error('Error fetching task details:', error);
+                    });
+            });
+        });
+    });
+</script>
+{% endblock %}

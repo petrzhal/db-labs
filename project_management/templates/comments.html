@@ -1,0 +1,87 @@
+{% extends 'layout.html' %}
+
+{% block title %}
+    Комментарии
+{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <h2 class="mb-4">{{ task.name }}</h2> <!-- Название задачи -->
+    <p class="text-muted mb-4">{{ task.description }}</p> <!-- Описание задачи -->
+
+    <div class="comments-list mb-4">
+        {% for comment in comments %}
+            <div class="message-cloud mb-3">
+                <div class="message-header">
+                    <strong>{{ comment.user.username }}</strong> 
+                    <span class="text-muted">{{ comment.publication_date|date:"d.m.Y H:i" }}</span>
+                </div>
+                <div class="message-body">
+                    <p>{{ comment.text }}</p>
+                </div>
+            </div>
+        {% empty %}
+            <div class="alert alert-muted">Комментариев пока нет.</div>
+        {% endfor %}
+    </div>
+
+    <form id="commentForm" action="{% url 'comments' task.id %}" method="post" class="mb-4">
+        {% csrf_token %}
+        <div class="input-group">
+            <input type="text" name="comment_text" class="form-control" placeholder="Ваш комментарий" required>
+            <button type="submit" class="btn btn-primary ms-2"> <!-- Изменена кнопка для отправки -->
+                <i class="bi bi-send"></i>
+            </button>
+        </div>
+    </form>
+    <a href="{% url 'project_detail' project_id %}" class="btn btn-secondary mt-3">
+        <i class="bi bi-arrow-left-circle"></i> Назад
+    </a>
+</div>
+
+<style>
+    .comments-list {
+        max-width: 600px; /* Ограничение ширины списка комментариев */
+        margin: auto; /* Центрирование списка */
+    }
+    .message-cloud {
+        background: #f1f1f1; /* Цвет облака */
+        border-radius: 15px; /* Скругление углов */
+        padding: 10px 15px; /* Отступы внутри облака */
+        margin-bottom: 15px; /* Отступ снизу */
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Легкая тень */
+    }
+    .message-header {
+        display: flex;
+        justify-content: space-between; /* Выравнивание по краям */
+        font-size: 14px; /* Размер шрифта для заголовка */
+        color: #333; /* Цвет текста */
+    }
+    .message-body {
+        margin-top: 5px; /* Отступ сверху для текста комментария */
+        font-size: 16px; /* Размер шрифта для тела сообщения */
+        color: #555; /* Цвет текста */
+    }
+    #commentForm {
+        width: 100%; /* Ширина формы комментария на 100% */
+    }
+    .input-group {
+        width: 100%; /* Установить ширину инпут группы на 100% */
+    }
+    .form-control {
+        border-radius: 20px 0 0 20px; /* Скругление углов инпута */
+        height: 50px; /* Высота инпута */
+    }
+    .btn-primary {
+        border-radius: 0 20px 20px 0; /* Скругление углов кнопки */
+        height: 50px; /* Высота кнопки */
+        display: flex; /* Центрирование иконки внутри кнопки */
+        align-items: center; /* Вертикальное выравнивание */
+        justify-content: center; /* Горизонтальное выравнивание */
+        padding: 0 15px; /* Увеличение отступа для кнопки */
+    }
+    .btn-primary i {
+        margin: 0; /* Удаление отступа для иконки */
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,74 @@
+.status-dot {
+    display: inline-block;
+}
+
+.card {
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.card-title {
+    font-weight: bold;
+}
+
+.card-text {
+    font-size: 0.9rem;
+    color: #555;
+}
+
+
+/* Цветовые индикаторы для статусов */
+#task-status.badge {
+    font-size: 0.9rem;
+    padding: 0.4em 0.6em;
+    border-radius: 0.25rem;
+}
+
+#task-status.Open {
+    background-color: #007bff;
+    /* Синий */
+    color: white;
+}
+
+#task-status.Closed {
+    background-color: #28a745;
+    /* Зеленый */
+    color: white;
+}
+
+/* Цветовые индикаторы для приоритетов */
+#task-priority.badge {
+    font-size: 0.9rem;
+    padding: 0.4em 0.6em;
+    border-radius: 0.25rem;
+}
+
+#task-priority.Low {
+    background-color: #6c757d;
+    /* Серый */
+    color: white;
+}
+
+#task-priority.Medium {
+    background-color: #17a2b8;
+    /* Голубой */
+    color: white;
+}
+
+#task-priority.High {
+    background-color: #fd7e14;
+    /* Оранжевый */
+    color: white;
+}
+
+#task-priority.Critical {
+    background-color: #dc3545;
+    /* Красный */
+    color: white;
+}

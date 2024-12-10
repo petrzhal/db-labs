@@ -1,0 +1,91 @@
+{% extends 'layout.html' %}
+
+{% block title %}Проекты{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h1 class="mb-4">Проекты</h1>
+
+  <div class="mb-3">
+    <form method="get" action="{% url 'projects' %}">
+      <div class="form-row">
+        <div class="col-md-4">
+          <input
+            type="text"
+            name="search"
+            class="form-control"
+            placeholder="Поиск по названию проекта"
+            value="{{ search_query }}"
+          />
+        </div>
+        <div class="col-md-3">
+          <select name="status" class="form-control">
+            <option value="">Все статусы</option>
+            <option value="open" {% if status_filter == "open" %}selected{% endif %}>Открыт</option>
+            <option value="in-progress" {% if status_filter == "in-progress" %}selected{% endif %}>В процессе</option>
+            <option value="closed" {% if status_filter == "closed" %}selected{% endif %}>Завершён</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <button type="submit" class="btn btn-primary">Применить фильтр</button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="row">
+    {% for project in projects %}
+    <div class="col-md-4">
+      <div class="card mb-4 shadow-sm" style="border-radius: 10px;">
+        <a href="{% url 'project_detail' project.id %}" style="text-decoration: none; color: inherit;">
+          <div class="card-body">
+            <h5 class="card-title d-flex align-items-center">
+              <span
+                class="status-dot mr-2"
+                style="
+                  height: 10px;
+                  width: 10px;
+                  border-radius: 50%;
+                  background-color: {% if project.status == 'Open' %} green
+                                  {% elif project.status == 'Closed' %} gray
+                                  {% else %} orange {% endif %};
+                "
+              ></span>
+              {{ project.name }}
+            </h5>
+            <p class="card-text text-muted">{{ project.description|truncatewords:20 }}</p>
+            <p class="mb-1"><strong>Менеджер:</strong> {{ project.manager }}</p>
+            <p><strong>Дата создания:</strong> {{ project.start_date|date:"d.m.Y" }}</p>
+          </div>
+        </a>
+        <div class="card-footer d-flex justify-content-center" style="gap: 10px;">
+          {% if role_id == 1 or user_id == project.manager_id %}
+          <a href="{% url 'edit_project' project.id %}" class="btn btn-sm btn-primary" title="Редактировать">
+            <i class="fas fa-edit"></i>
+          </a>
+          {% endif %}
+          {% if role_id == 1 %}
+          <a
+            href="{% url 'delete_project' project.id %}"
+            class="btn btn-sm btn-danger"
+            onclick="return confirm('Вы уверены, что хотите удалить этот проект?');"
+            title="Удалить"
+          >
+            <i class="fas fa-trash-alt"></i>
+          </a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+      <div class="alert alert-info text-center">Проекты не найдены</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% if role_id == 1 or role_id == 3 %}
+  <a href="{% url 'create_project' %}" class="btn btn-success">Создать проект</a>
+  {% endif %}
+</div>
+{% endblock %}

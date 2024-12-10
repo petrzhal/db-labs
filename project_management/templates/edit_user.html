@@ -1,0 +1,30 @@
+{% extends 'layout.html' %}
+
+{% block title %}Редактирование пользователя{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Редактирование пользователя</h1>
+    <form method="post" action="{% url 'edit_user' user.id %}">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="username">Имя пользователя</label>
+            <input type="text" class="form-control" id="username" name="username" value="{{ user.username }}" required>
+        </div>
+        <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" class="form-control" id="email" name="email" value="{{ user.email }}" required>
+        </div>
+        <div class="form-group">
+            <label for="role">Роль</label>
+            <select class="form-control" id="role" name="role" required>
+                <option value="1" {% if user.role == 1 %}selected{% endif %}>Администратор</option>
+                <option value="2" {% if user.role == 2 %}selected{% endif %}>Менеджер проектов</option>
+                <option value="3" {% if user.role == 3 %}selected{% endif %}>Сотрудник</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Сохранить</button>
+        <a href="{% url 'manage_users' %}" class="btn btn-secondary">Отмена</a>
+    </form>
+</div>
+{% endblock %}

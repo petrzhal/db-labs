@@ -1,0 +1,39 @@
+{% extends 'layout.html' %}
+
+{% block title %}Создать проект{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h1>Создать проект</h1>
+  <form method="post">
+    {% csrf_token %}
+    <div class="form-group">
+      <label for="name">Название проекта</label>
+      <input type="text" class="form-control" id="name" name="name" placeholder="Введите название проекта" required>
+    </div>
+    <div class="form-group">
+      <label for="description">Описание</label>
+      <textarea class="form-control" id="description" name="description" rows="3" placeholder="Введите описание проекта"></textarea>
+    </div>
+    <div class="form-group">
+      <label for="start_date">Дата начала</label>
+      <input type="date" class="form-control" id="start_date" name="start_date" required>
+    </div>
+    <div class="form-group">
+      <label for="end_date">Дата завершения</label>
+      <input type="date" class="form-control" id="end_date" name="end_date" required>
+    </div>
+    <div class="form-group">
+      <label for="manager_id">Менеджер проекта</label>
+      <select class="form-control" id="manager_id" name="manager_id" required>
+        <option value="" disabled selected>Выберите менеджера</option>
+        {% for user in users %}
+          <option value="{{ user.id }}">{{ user.username }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="btn btn-success">Создать</button>
+    <a href="{% url 'projects' %}" class="btn btn-secondary">Отмена</a>
+  </form>
+</div>
+{% endblock %}

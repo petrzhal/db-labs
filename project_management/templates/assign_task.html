@@ -1,0 +1,25 @@
+{% extends 'layout.html' %}
+
+{% block title %}Назначить задачу{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+  <h1 class="mb-4">Назначить задачу</h1>
+  <p><strong>Проект:</strong> {{ project.name }}</p>
+  <p><strong>Задача:</strong> {{ task.name }}</p>
+  <form method="post" action="{% url 'assign_task' project.id task.id %}">
+    {% csrf_token %}
+    <div class="form-group">
+      <label for="user-select">Пользователь</label>
+      <select name="user_id" id="user-select" class="form-control" required>
+        <option value="" disabled selected>Выберите пользователя</option>
+        {% for user in users %}
+        <option value="{{ user.id }}">{{ user.username }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="btn btn-primary">Назначить</button>
+    <a href="{% url 'project_details' project.id %}" class="btn btn-secondary">Назад</a>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,502 @@
+{% extends 'layout.html' %}
+
+{% block title %}{{ vm.name }}{% endblock %}
+
+{% block content %}
+
+{% block extra_scripts %}
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const assignButtons = document.querySelectorAll('[data-toggle="modal"][data-target="#assignTaskModal"]');
+
+    assignButtons.forEach(button => {
+      button.addEventListener('click', function () {
+        const projectId = button.getAttribute('data-project-id');
+        const taskId = button.getAttribute('data-task-id');
+
+        const modalForm = document.querySelector('#assignTaskModal form');
+        const urlTemplate = modalForm.getAttribute('data-url-template');
+
+        const newAction = urlTemplate
+          .replace('PROJECT_ID_PLACEHOLDER', projectId)
+          .replace('TASK_ID_PLACEHOLDER', taskId);
+
+        modalForm.setAttribute('action', newAction);
+      });
+    });
+  });
+  
+
+
+  document.addEventListener('DOMContentLoaded', function () {
+    // Для отображения деталей задачи
+    const taskDetailsLinks = document.querySelectorAll('.task-details-link');
+taskDetailsLinks.forEach(link => {
+    link.addEventListener('click', function () {
+        const taskId = this.getAttribute('data-task-id');
+        fetch(`/tasks/${taskId}/details/`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to fetch task details.');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Обновление информации в модальном окне
+                console.log(data)
+                document.getElementById('task-name').innerText = data.name;
+                document.getElementById('task-description').innerText = data.description;
+                document.getElementById('task-status').innerText = data.status;
+                document.getElementById('task-priority').innerText = data.priority;
+                document.getElementById('task-due-date').innerText = data.due_date;
+
+                // Обновление списка пользователей, которым назначена задача
+                const assignedUsersList = document.getElementById('task-assigned-users-list');
+                assignedUsersList.innerHTML = '';
+                if (data.assigned_to.length > 0) {
+                    data.assigned_to.forEach(user => {
+                        const listItem = document.createElement('li');
+                        listItem.className = 'list-group-item';
+                        listItem.textContent = user;
+                        assignedUsersList.appendChild(listItem);
+                    });
+                } else {
+                    assignedUsersList.innerHTML = '<li class="list-group-item text-muted">No users assigned</li>';
+                }
+
+                // Обновление списка файлов
+                const filesList = document.getElementById('task-files-list');
+                filesList.innerHTML = '';
+                if (data.files.length > 0) {
+                    data.files.forEach(file => {
+                        const listItem = document.createElement('li');
+                        listItem.className = 'list-group-item';
+                        listItem.innerHTML = `<a href="${file.url}" download="${file.name}">${file.name}</a>`;
+                        filesList.appendChild(listItem);
+                    });
+                } else {
+                    filesList.innerHTML = '<li class="list-group-item text-muted">No files attached</li>';
+                }
+
+            })
+            .catch(error => {
+                console.error('Error fetching task details:', error);
+            });
+    });
+});
+
+    document.addEventListener('DOMContentLoaded', function () {
+      const assignButtons = document.querySelectorAll('[data-toggle="modal"][data-target="#assignTaskModal"]');
+  
+      assignButtons.forEach(button => {
+        button.addEventListener('click', function () {
+          const taskId = button.getAttribute('data-task-id');
+          
+          const modalForm = document.querySelector('#assignTaskModal form');
+  
+          const currentAction = modalForm.getAttribute('action');
+          const newAction = currentAction.replace('task_id', taskId);
+          modalForm.setAttribute('action', newAction);
+        });
+      });
+    });
+
+    // Для редактирования задачи
+    const editTaskButtons = document.querySelectorAll('.edit-task-button');
+    editTaskButtons.forEach(button => {
+    button.addEventListener('click', function () {
+        const taskId = this.getAttribute('data-task-id');
+        fetch(`/tasks/${taskId}/details/`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to fetch task details.');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Заполнение полей формы редактирования
+                document.getElementById('edit-task-name').value = data.name;
+                document.getElementById('edit-task-description').value = data.description;
+                document.getElementById('edit-task-status').value = data.status;
+                document.getElementById('edit-task-priority').value = data.priority;
+                document.getElementById('edit-task-due-date').value = data.due_date;
+
+                // Очистка и заполнение списка файлов
+                const filesList = document.getElementById('edit-task-files-list');
+                filesList.innerHTML = '';
+                if (data.files.length > 0) {
+                    data.files.forEach(file => {
+                        const listItem = document.createElement('li');
+                        listItem.className = 'list-group-item';
+                        listItem.innerHTML = `<a href="${file.url}" download>${file.name}</a>`;
+                        filesList.appendChild(listItem);
+                    });
+                } else {
+                    filesList.innerHTML = '<li class="list-group-item text-muted">No files attached</li>';
+                }
+
+                // Обновление action URL формы
+                document.getElementById('editTaskForm').action = `/tasks/${taskId}/edit/`;
+
+                // Динамическое обновление списка приоритетов
+                const prioritySelect = document.getElementById('edit-task-priority');
+                prioritySelect.innerHTML = ''; // Очистка текущих значений
+                
+                // Используем переданные приоритеты из data.all_priorities
+                data.all_priorities.forEach(priority => {
+                    const option = document.createElement('option');
+                    option.value = priority;
+                    option.textContent = priority;
+                    if (priority === data.priority) {
+                        option.selected = true; // Устанавливаем текущий приоритет
+                    }
+                    prioritySelect.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching task details for edit:', error);
+            });
+      });
+  });
+});
+
+function updateTaskDetailsModal(task) {
+  // Установите значения
+  document.getElementById('task-name').textContent = task.name;
+  document.getElementById('task-description').textContent = task.description;
+  document.getElementById('task-due-date').textContent = task.due_date;
+
+  // Установите статус с классом
+  const taskStatus = document.getElementById('task-status');
+  taskStatus.textContent = task.status;
+  taskStatus.className = `badge ${task.status}`;
+
+  // Установите приоритет с классом
+  const taskPriority = document.getElementById('task-priority');
+  taskPriority.textContent = task.priority;
+  taskPriority.className = `badge ${task.priority}`;
+
+  // Обновите пользователей и файлы
+  const assignedUsersList = document.getElementById('task-assigned-users-list');
+  assignedUsersList.innerHTML = '';
+  task.assigned_users.forEach(user => {
+      const li = document.createElement('li');
+      li.textContent = user;
+      li.className = 'list-group-item';
+      assignedUsersList.appendChild(li);
+  });
+
+  const filesList = document.getElementById('task-files-list');
+  filesList.innerHTML = '';
+  task.files.forEach(file => {
+      const li = document.createElement('li');
+      li.innerHTML = `<a href="${file.url}" target="_blank">${file.name}</a>`;
+      li.className = 'list-group-item';
+      filesList.appendChild(li);
+  });
+
+  // Открыть модальное окно
+  $('#taskDetailsModal').modal('show');
+}
+</script>
+
+{% endblock %}
+
+
+<div class="container my-5">
+  <!-- Project Details -->
+  <div class="row">
+    <div class="col-md-8">
+        <h1 class="mb-4">{{ vm.name }}</h1>
+        <p><strong>Описание:</strong> {{ vm.description }}</p>
+        <p><strong>Статус:</strong> 
+            <span class="badge {% if vm.status == 'Open' %}badge-success{% elif vm.status == 'Closed' %}badge-secondary{% else %}badge-warning{% endif %}">
+                {{ vm.status }}
+            </span>
+        </p>
+        <p><strong>Менеджер:</strong> {{ vm.manager }}</p>
+        <p><strong>Дата начала:</strong> {{ vm.start_date|date:"d.m.Y" }}</p>
+        <p><strong>Дата окончания:</strong> {{ vm.end_date|date:"d.m.Y" }}</p>
+        {% if is_manager %}
+            <a href="{% url 'add_task' vm.id %}" class="btn btn-primary mt-3">Добавить задачу</a>
+        {% endif %}
+        <a href="{% url 'projects' %}" class="btn btn-secondary mt-3">Назад</a>
+    </div>
+
+    <!-- Participants -->
+    <div class="col-md-4">
+        <h4 class="mb-3">Участники проекта</h4>
+        <ul class="list-group">
+            {% for member in vm.members %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                {{ member.username }}
+                <span class="badge badge-info">{{ member.role }}</span>
+            </li>
+            {% empty %}
+            <li class="list-group-item text-muted">Участников пока нет</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+
+<!-- Кнопки редактирования и удаления -->
+<div class="card-footer d-flex justify-content-center mt-4" style="gap: 10px;">
+    {% if is_manager %}
+    <a href="{% url 'edit_project' vm.id %}" class="btn btn-sm btn-primary" title="Редактировать">
+        <i class="fas fa-edit"></i> <!-- Иконка редактирования -->
+    </a>
+    {% endif %}
+    {% if is_manager %}
+    <a
+        href="{% url 'delete_project' vm.id %}"
+        class="btn btn-sm btn-danger"
+        onclick="return confirm('Вы уверены, что хотите удалить этот проект?');"
+        title="Удалить"
+    >
+        <i class="fas fa-trash-alt"></i> <!-- Иконка удаления -->
+    </a>
+    {% endif %}
+</div>
+
+
+<!-- Tasks -->
+<div class="mt-5">
+  <h3>Задачи</h3>
+  <table class="table table-bordered">
+    <thead>
+      <tr>
+        <th>Название</th>
+        <th>Описание</th>
+        <th>Статус</th>
+        <th>Приоритет</th>
+        <th>Назначено</th>
+        <th>Действия</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for task in vm.tasks %}
+      <tr>
+        <td>
+          <a href="#" class="task-details-link" data-task-id="{{ task.id }}" data-toggle="modal" data-target="#taskDetailsModal">
+            {{ task.name }}
+          </a>
+        </td>
+        <td>{{ task.description|truncatewords:10 }}</td>
+        <td>
+          <span class="badge {% if task.status == 'Open' %}badge-success{% elif task.status == 'In Progress' %}badge-warning{% else %}badge-secondary{% endif %}">
+            {{ task.status }}
+          </span>
+        </td>
+        <td>
+          <span class="badge 
+            {% if task.priority == 'High' %}badge-danger
+            {% elif task.priority == 'Medium' %}badge-warning
+            {% elif task.priority == 'Low' %}badge-success
+            {% else %}badge-secondary{% endif %}">
+            {{ task.priority }}
+          </span>
+        </td>
+        <td>
+          {% if task.assigned_to %}
+            {% for assign in task.assigned_to %}
+                <p>{{ assign }}</p>
+            {% endfor %}
+          {% else %}
+            Не назначено
+          {% endif %}
+        </td>
+        <td>
+          <a href="{% url 'comments' task.id %}" class="btn btn-sm btn-info">Комментарии</a> <!-- Кнопка перехода к комментариям -->
+          {% if is_manager %}  <!-- Условие для отображения кнопок действий только для менеджеров -->
+            <button 
+              type="button" 
+              class="btn btn-sm btn-primary assign-task-button" 
+              data-task-id="{{ task.id }}"
+              data-project-id="{{ vm.id }}"  
+              data-toggle="modal" 
+              data-target="#assignTaskModal">
+              Назначить
+            </button>
+            <form action="{% url 'delete_task' task.id %}" method="post" style="display:inline;">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm btn-danger">Удалить</button>
+            </form>
+            {% endif %}
+            <button 
+              type="button" 
+              class="btn btn-sm btn-warning edit-task-button" 
+              data-task-id="{{ task.id }}" 
+              data-toggle="modal" 
+              data-target="#editTaskModal">
+              Редактировать
+            </button>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="6" class="text-center text-muted">Задачи пока не добавлены</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+  
+
+  <!-- Assign Task Modal -->
+  <div class="modal fade" id="assignTaskModal" tabindex="-1" aria-labelledby="assignTaskModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="assignTaskModalLabel">Назначить задачу</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <form method="post" action="" data-url-template="/project/PROJECT_ID_PLACEHOLDER/task/TASK_ID_PLACEHOLDER/assign/">
+          {% csrf_token %}
+          <div class="modal-body">
+            <div class="form-group">
+              <label for="user_id">Назначить пользователю</label>
+              <select id="user_id" name="user_id" class="form-control">
+                {% for user in vm.all_users %}
+                  <option value="{{ user.id }}">{{ user.username }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-primary">Назначить</button>
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Отмена</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Task Modal -->
+  <div class="modal fade" id="editTaskModal" tabindex="-1" aria-labelledby="editTaskModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editTaskModalLabel">Редактировать задачу</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form method="post" action="" id="editTaskForm" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-body">
+                    {% if user.is_authenticated and not is_manager and not is_admin %}
+                    <div class="form-group">
+                        <label for="edit-task-status">Статус</label>
+                        <select id="edit-task-status" name="status" class="form-control" required>
+                            <option value="Open" {% if task.status == 'Open' %}selected{% endif %}>Открыто</option>
+                            <option value="In Progress" {% if task.status == 'In Progress' %}selected{% endif %}>В работе</option>
+                            <option value="Closed" {% if task.status == 'Closed' %}selected{% endif %}>Закрыто</option>
+                        </select>
+                    </div>
+                    {% else %}
+                    <div class="form-group">
+                        <label for="edit-task-name">Название</label>
+                        <input type="text" id="edit-task-name" name="name" class="form-control" value="{{ task.name }}" required {% if not is_manager and not is_admin %}disabled{% endif %}>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-task-description">Описание</label>
+                        <textarea id="edit-task-description" name="description" class="form-control" rows="3" required {% if not is_manager and not is_admin %}disabled{% endif %}>{{ task.description }}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-task-status">Статус</label>
+                        <select id="edit-task-status" name="status" class="form-control" required>
+                            <option value="Open" {% if task.status == 'Open' %}selected{% endif %}>Открыто</option>
+                            <option value="In Progress" {% if task.status == 'In Progress' %}selected{% endif %}>В работе</option>
+                            <option value="Closed" {% if task.status == 'Closed' %}selected{% endif %}>Закрыто</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-task-priority">Приоритет</label>
+                        <select id="edit-task-priority" name="priority" class="form-control" required {% if not is_manager and not is_admin %}disabled{% endif %}>
+                            <option value="Low" {% if task.priority == 'Low' %}selected{% endif %}>Низкий</option>
+                            <option value="Medium" {% if task.priority == 'Medium' %}selected{% endif %}>Средний</option>
+                            <option value="High" {% if task.priority == 'High' %}selected{% endif %}>Высокий</option>
+                            <option value="Critical" {% if task.priority == 'Critical' %}selected{% endif %}>Критический</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-task-due-date">Срок выполнения</label>
+                        <input type="date" id="edit-task-due-date" name="due_date" class="form-control" value="{{ task.due_date|date:'Y-m-d' }}" {% if not is_manager and not is_admin %}disabled{% endif %}>
+                    </div>
+                    {% endif %}
+                    <h6>Прикрепленные файлы:</h6>
+                    <ul id="edit-task-files-list" class="list-group">
+                        <!-- Список файлов -->
+                    </ul>
+                    <div class="form-group mt-3">
+                        <label for="edit-task-files">Добавить новые файлы</label>
+                        <input type="file" id="edit-task-files" name="new_files[]" class="form-control" multiple>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Отмена</button>
+                </div>
+            </form>
+        </div>
+    </div>
+  </div>
+  
+
+<!-- Task Details Modal -->
+<div class="modal fade" id="taskDetailsModal" tabindex="-1" aria-labelledby="taskDetailsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+          <div class="modal-header bg-primary text-white">
+              <h5 class="modal-title" id="taskDetailsModalLabel">Task Details</h5>
+              <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+              </button>
+          </div>
+          <div class="modal-body">
+              <div class="mb-4">
+                  <h5 class="font-weight-bold">
+                      Название: <span id="task-name"></span>
+                  </h5>
+              </div>
+              <div class="mb-3">
+                  <p><strong>Описание:</strong> <span id="task-description"></span></p>
+              </div>
+              <div class="mb-3">
+                  <p><strong>Статус:</strong> 
+                      <span id="task-status" class="badge"></span>
+                  </p>
+              </div>
+                <div class="mb-3">
+                    <p><strong>Приоритет:</strong> 
+                        <span id="task-priority" class="badge"></span>
+                    </p>
+                </div>
+              <div class="mb-3">
+                  <p><strong>Срок выполнения:</strong> <span id="task-due-date"></span></p>
+              </div>
+              <div class="mb-3">
+                  <p><strong>Назначено пользователям:</strong></p>
+                  <ul id="task-assigned-users-list" class="list-group">
+                      <!-- Список пользователей -->
+                  </ul>
+              </div>
+              <div class="mb-3">
+                  <h6>Файлы:</h6>
+                  <ul id="task-files-list" class="list-group">
+                      <!-- Список файлов -->
+                  </ul>
+              </div>
+          </div>
+          <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-dismiss="modal">Закрыть</button>
+          </div>
+      </div>
+  </div>
+</div>
+
+{% endblock %}
